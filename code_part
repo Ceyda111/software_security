@@ -2,17 +2,21 @@ from flask import Flask, request, session, abort
 from werkzeug.security import generate_password_hash, check_password_hash
 from cryptography.fernet import Fernet
 
+
 app = Flask(__name__)
 app.secret_key = "secret_key_for_session"
 
 key = Fernet.generate_key()
 cipher = Fernet(key)
 
+
 users = {
     "admin": {"pw": generate_password_hash("admin123"), "role": "admin"},
     "student": {"pw": generate_password_hash("user123"), "role": "user"}
 }
+
 data_storage = []
+
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -25,6 +29,7 @@ def login():
         return "Login successful"
     return "Invalid credentials", 401
 
+
 @app.route("/admin")
 def admin_dashboard():
     if session.get("r") != "admin":
@@ -34,6 +39,7 @@ def admin_dashboard():
         decrypted_notes.append(cipher.decrypt(encrypted_data).decode())
     return str(decrypted_notes)
 
+
 @app.route("/add", methods=["POST"])
 def add_note():
     if "u" not in session:
@@ -42,6 +48,8 @@ def add_note():
     encrypted_message = cipher.encrypt(message.encode())
     data_storage.append(encrypted_message)
     return "Encrypted and saved"
+
+
 
 if __name__ == "__main__":
     app.run()
