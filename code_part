@@ -1,0 +1,49 @@
+
+from flask import Flask, request, session, abort
+from werkzeug.security import generate_password_hash, check_password_hash
+from cryptography.fernet import Fernet
+
+app = Flask(__name__)
+app.secret_key = 'öğrenci_projesi'
+
+anahtar = Fernet.generate_key()
+sifreleyici = Fernet(anahtar)
+
+kullanicilar = {
+    "admin": {"sifre": generate_password_hash("123"), "rol": "admin"},
+    "isü": {"sifre": generate_password_hash("456"), "rol": "user"}
+}
+sifreli_liste = []
+
+@app.route('/login', methods=['POST'])
+def login():
+    u = request.form.get('user')
+    p = request.form.get('pass')
+    
+    user = kullanicilar.get(u)
+    if user and check_password_hash(user['sifre'], p):
+        session['user'] = u
+        session['rol'] = user['rol']
+        return "Giris yapildi"
+    return "Hata", 401
+
+@app.route('/admin')
+def admin():
+    if session.get('rol') != 'admin':
+        abort(403)
+    
+    cozulmus = [sifreleyici.decrypt(n).decode() for n in sifreli_liste]
+    return str(cozulmus)
+
+@app.route('/ekle', methods=['POST'])
+def ekle():
+    if 'user' not in session:
+        return "Yetkisiz", 401
+    
+    not_verisi = request.form.get('not')
+    sifreli_not = sifreleyici.encrypt(not_verisi.encode())
+    sifreli_liste.append(sifreli_not)
+    return "Kaydedildi"
+
+if __name__ == '__main__':
+    app.run(debug=True)
