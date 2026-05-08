@@ -1,29 +1,55 @@
-
 import sqlite3
 import bcrypt
+from cryptography.fernet import Fernet
 from flask import Flask, render_template, request, redirect, session
 
 app = Flask(__name__)
-app.secret_key = "change_this_to_a_secret"
+app.secret_key = "secret123"
 
+
+# burada encryption key oluşturuyorum
+# secret data encrypt ve decrypt işlemleri için kullanacağım
+key = Fernet.generate_key()
+cipher = Fernet(key)
+
+
+@app.route("/")
+def home():
+    return redirect("/login")
+
+
+# login işlemi
+# kullanıcı adı ve şifre kontrolü yapıyorum
 @app.route("/login", methods=["GET", "POST"])
 def login():
+
     if request.method == "POST":
+
         user = request.form["username"]
         pw = request.form["password"]
 
         conn = sqlite3.connect("users.db")
         cur = conn.cursor()
 
-        cur.execute("SELECT * FROM users WHERE username = ?", (user,))
+        cur.execute(
+            "SELECT * FROM users WHERE username = ?",
+            (user,)
+        )
+
         data = cur.fetchone()
+
         conn.close()
 
         if data:
+
             dbPw = data[2]
+
+            # burada hashlenmiş şifre kontrolü yapıyorum
             if bcrypt.checkpw(pw.encode(), dbPw):
+
                 session["user"] = data[1]
                 session["role"] = data[3]
+
                 return redirect("/dashboard")
 
         return "wrong username or password"
@@ -31,8 +57,53 @@ def login():
     return render_template("login.html")
 
 
-# kullanıcı giriş yaptıysa dashboard açılıyor
-# burada encrypted veri decrypt edilip gösteriliyor
+# register işlemi
+# şifreyi hashleyip kaydediyorum
+# ayrıca secret bilgiyi encrypt edip databasee atıyorum
+@app.route("/register", methods=["GET", "POST"])
+def register():
+
+    if request.method == "POST":
+
+        user = request.form["username"]
+        pw = request.form["password"]
+        text = request.form["secret_data"]
+
+        hashedPw = bcrypt.hashpw(
+            pw.encode(),
+            bcrypt.gensalt()
+        )
+
+        encText = cipher.encrypt(text.encode())
+
+        conn = sqlite3.connect("users.db")
+        cur = conn.cursor()
+
+        # ilk kullanıcı admin olsun diye bunu yaptım
+        cur.execute("SELECT COUNT(*) FROM users")
+
+        total = cur.fetchone()[0]
+
+        role = "user"
+
+        if total == 0:
+            role = "admin"
+
+        cur.execute(
+            "INSERT INTO users(username,password,role,secretText) VALUES(?,?,?,?)",
+            (user, hashedPw, role, encText)
+        )
+
+        conn.commit()
+        conn.close()
+
+        return redirect("/login")
+
+    return render_template("register.html")
+
+
+# kullanıcı giriş yaptıysa panel açılıyor
+# encrypted veri burada decrypt edilip gösteriliyor
 @app.route("/dashboard")
 def dashboard():
 
@@ -61,8 +132,8 @@ def dashboard():
     )
 
 
-# sadece admin rolü girsin diye kontrol yaptım
-# user hesabı girerse access denied dönecek
+# sadece admin girsin diye kontrol yaptım
+# normal user girerse engellenecek
 @app.route("/admin")
 def adminPage():
 
@@ -70,7 +141,7 @@ def adminPage():
         return redirect("/login")
 
     if session["role"] != "admin":
-        return "Access Denied"
+        return "Bu sayfaya sadece admin girebilir"
 
     return render_template("admin.html")
 
