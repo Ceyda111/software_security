@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from dotenv import load_dotenv
 from cryptography.fernet import Fernet
 from flask import Flask, render_template, request, redirect, session
+from datetime import datetime
 
 load_dotenv()
 
@@ -35,12 +36,14 @@ def log_event(action, user_id=None, username=None):
     """Encrypts the action and logs the event."""
     ip_addr = request.remote_addr
     encrypted_action = cipher.encrypt(action.encode())
+
+    local_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     with get_db() as conn:
         cur = conn.cursor()
         cur.execute(
-            "INSERT INTO audit_logs (user_id, username, action, ip_address) VALUES (?, ?, ?, ?)",
-            (user_id, username, encrypted_action, ip_addr)
+            "INSERT INTO audit_logs (user_id, username, action, ip_address, timestamp) VALUES (?, ?, ?, ?, ?)",
+            (user_id, username, encrypted_action, ip_addr, local_time)
         )
         conn.commit()
 
