@@ -1,38 +1,76 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        background-color: white;
+      }
+  
+      textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+        margin-top: 6px;
+        margin-bottom: 16px;
+        resize: vertical;
+     }
+      a {
+        text-decoration: none;
+        display: inline-block;
+        padding: 8px 16px;
+      }
+      
+      a:hover {
+        opacity: 0.8;
+      }
+      
+      .logoutbtn {
+      	border-radius: 8px;
+        background-color: #f44336;
+        color: white;
+      }
+      
+      .adminbtn {
+      	border-radius: 4px;
+      	background-color: #408dc4;
+        color: white;
+      }
+      
+    </style>
+    
+	<title>Dashboard</title>
 </head>
+
 <body>
-
-    <h2>Welcome {{ username }}</h2>
-
-    <p>Your role: {{ role }}</p>
-
-    <a href="/logout">Logout</a>
+    <h1>Welcome, {{ username }}!</h1>
+    
+    <p>Your role: <strong>{{ role }}</strong></p>
+    
+    {% if role == 'admin' %}
+        <p><a href="/admin" class="adminbtn">Go to Admin Panel</a></p>
+    {% endif %}
 
     <hr>
-
-    <h3>Add Secret Note</h3>
-
+    <h3>Your Secure Notes</h3>
     <form method="POST">
-        <textarea name="note" rows="5" cols="40" required></textarea><br><br>
-
+        <textarea name="note" placeholder="Write a secret note..." required></textarea><br>
         <button type="submit">Save Note</button>
     </form>
 
+    <ul>
+        {% for note in notes %}
+            <li>{{ note }}</li>
+        {% else %}
+            <li>No notes found.</li>
+        {% endfor %}
+    </ul>
+
     <hr>
-
-    <h3>Your Notes</h3>
-
-    {% for note in notes %}
-        <p>{{ note }}</p>
-        <hr>
-    {% endfor %}
-
-    {% if role == "admin" %}
-        <a href="/admin">Go to Admin Page</a>
-    {% endif %}
-
+    <a href="/logout" class="logoutbtn">Logout</a>
 </body>
 </html>

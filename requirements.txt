@@ -1,0 +1,5 @@
+flask
+bcrypt
+cryptography
+python-dotenv
+sqlcipher3-wheels

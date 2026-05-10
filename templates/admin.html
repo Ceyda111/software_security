@@ -1,35 +1,81 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: white;
+        }
+        
+      a {
+        text-decoration: none;
+        display: inline-block;
+        padding: 8px 16px;
+      }
+      
+      a:hover {
+        opacity: 0.8;
+      }
+      
+      .dashbrdbtn {
+        background-color: #04AA6D;
+        color: white;
+      }
+      
+      .logoutbtn {
+        background-color: #f44336;
+        color: white;
+      }
+    
+      table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+      th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+      tr:nth-child(even) { background-color: #f2f2f2; }
+      .critical { color: red; font-weight: bold; }
+        
+    </style>
+    
     <title>Admin Panel</title>
+    
 </head>
+
 <body>
+    <h1>System Administration</h1>
+    <a href="/dashboard" class="dashbrdbtn">&laquo; Back to Dashboard</a> | <a href="/logout" class="logoutbtn">Logout</a>
 
-    <h2>Admin Panel</h2>
-
-    <a href="/dashboard">Back to Dashboard</a><br><br>
-
-    <h3>All Users</h3>
-
-    <table border="1" cellpadding="10">
-
-        <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Role</th>
-        </tr>
-
+    <h2>Registered Users</h2>
+    <table>
+        <tr><th>ID</th><th>Username</th><th>Role</th></tr>
         {% for user in users %}
-
         <tr>
             <td>{{ user[0] }}</td>
             <td>{{ user[1] }}</td>
             <td>{{ user[2] }}</td>
         </tr>
-
         {% endfor %}
-
     </table>
 
+    <h2>Audit Logs</h2>
+    <table>
+        <tr>
+            <th>Timestamp</th>
+            <th>User ID</th>
+            <th>Username</th>
+            <th>Action</th>
+            <th>IP Address</th>
+        </tr>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log[5] }}</td>
+            <td>{{ log[1] or 'N/A' }}</td>
+            <td>{{ log[2] or 'Guest' }}</td>
+            <td class="{{ 'critical' if 'FAILED' in log[3] or 'UNAUTHORIZED' in log[3] }}">
+                {{ log[3] }}
+            </td>
+            <td>{{ log[4] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
 </body>
 </html>
